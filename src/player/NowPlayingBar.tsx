@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useMusic } from '../context/MusicContext';
 import { getTrackGenre, GENRE_DEFINITIONS } from '../music/genres';
 import { getTrackThumbnailUrl } from '../music/thumbnailHelper';
@@ -117,91 +118,102 @@ export function NowPlayingBar() {
       </div>
 
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-6">
-        {/* Left: Track Information & Vinyl Thumbnail */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 max-w-[42%] sm:max-w-[32%]">
-          {/* Mini Rotating Record with Song Thumbnail & Beat Pulse Glow */}
-          <button
-            onClick={openFullPlayer}
-            title="Expand vinyl player"
-            className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full shrink-0 overflow-hidden bg-stone-950 border border-amber-500/40 shadow-md group cursor-pointer transition-all duration-150"
-            style={{
-              boxShadow: isPlaying && !turntableTransitioning
-                ? `0 0 ${4 + beatDynamics.beatPulse * 12}px ${beatDynamics.emotionTheme.glowColor}`
-                : 'none',
-              transform: `scale(${isPlaying && !turntableTransitioning ? 1 + beatDynamics.beatPulse * 0.04 : 1})`,
-            }}
-          >
-            <div
-              className={`w-full h-full flex items-center justify-center relative ${
-                isPlaying && !turntableTransitioning ? 'animate-[spin_4s_linear_infinite]' : ''
-              }`}
+        {/* Left: Track Information & Vinyl Thumbnail with Smooth Cross-Fade */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 max-w-[44%] sm:max-w-[34%]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTrack.id}
+              initial={{ opacity: 0, scale: 0.94, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.94, filter: 'blur(3px)' }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1"
             >
-              {/* Vinyl grooves */}
-              <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,transparent_38%,rgba(255,255,255,0.06)_40%,rgba(0,0,0,0.85)_42%,transparent_56%)] z-10 pointer-events-none" />
-              
-              {/* Center Track Thumbnail */}
-              <img
-                src={getTrackThumbnailUrl(currentTrack, 'mq')}
-                alt={currentTrack.title}
-                className="w-full h-full object-cover rounded-full"
-              />
+              {/* Mini Rotating Record with Song Thumbnail & Beat Pulse Glow */}
+              <button
+                onClick={openFullPlayer}
+                title="Expand vinyl player"
+                className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full shrink-0 overflow-hidden bg-stone-950 border border-amber-500/40 shadow-md group cursor-pointer transition-all duration-150"
+                style={{
+                  boxShadow: isPlaying && !turntableTransitioning
+                    ? `0 0 ${4 + beatDynamics.beatPulse * 12}px ${beatDynamics.emotionTheme.glowColor}`
+                    : 'none',
+                  transform: `scale(${isPlaying && !turntableTransitioning ? 1 + beatDynamics.beatPulse * 0.04 : 1})`,
+                }}
+              >
+                <div
+                  className={`w-full h-full flex items-center justify-center relative ${
+                    isPlaying && !turntableTransitioning ? 'animate-[spin_4s_linear_infinite]' : ''
+                  }`}
+                >
+                  {/* Vinyl grooves */}
+                  <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,transparent_38%,rgba(255,255,255,0.06)_40%,rgba(0,0,0,0.85)_42%,transparent_56%)] z-10 pointer-events-none" />
+                  
+                  {/* Center Track Thumbnail */}
+                  <img
+                    src={getTrackThumbnailUrl(currentTrack, 'mq')}
+                    alt={currentTrack.title}
+                    className="w-full h-full object-cover rounded-full"
+                  />
 
-              {/* Center Record Spindle Hole */}
-              <div className="absolute w-3 h-3 rounded-full bg-stone-950 border border-amber-400/60 z-20 flex items-center justify-center">
-                <div className="w-1 h-1 rounded-full bg-amber-400" />
-              </div>
-            </div>
-            <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white z-30">
-              <Maximize2 className="w-4 h-4 text-amber-300" />
-            </div>
-          </button>
+                  {/* Center Record Spindle Hole */}
+                  <div className="absolute w-3 h-3 rounded-full bg-stone-950 border border-amber-400/60 z-20 flex items-center justify-center">
+                    <div className="w-1 h-1 rounded-full bg-amber-400" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white z-30">
+                  <Maximize2 className="w-4 h-4 text-amber-300" />
+                </div>
+              </button>
 
-          {/* Titles */}
-          <div
-            onClick={openFullPlayer}
-            className="min-w-0 cursor-pointer group"
-          >
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xs sm:text-sm font-bold truncate transition-colors ${theme.textPrimary} group-hover:text-amber-400`}>
-                {currentTrack.title}
-              </span>
-              {currentTrack.year && (
-                <span className={`hidden md:inline-block text-[10px] font-mono opacity-60 ${theme.textSecondary}`}>
-                  ({currentTrack.year})
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <p className={`text-[11px] sm:text-xs truncate font-medium ${theme.textSecondary}`}>
-                {currentTrack.artist || 'Ating Universe'}
-              </p>
-              {/* World State & Genre Badge */}
-              {(() => {
-                const genreId = getTrackGenre(currentTrack);
-                const def = GENRE_DEFINITIONS[genreId];
-                return (
-                  <span
-                    className={`hidden lg:inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full border font-mono tracking-wide ${def.badgeStyle}`}
-                    title={`Atmospheric World: ${def.worldState} (${def.weatherType})`}
-                  >
-                    <span>{def.icon}</span>
-                    <span>{def.shortName}</span>
+              {/* Titles */}
+              <div
+                onClick={openFullPlayer}
+                className="min-w-0 cursor-pointer group"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs sm:text-sm font-bold truncate transition-colors ${theme.textPrimary} group-hover:text-amber-400`}>
+                    {currentTrack.title}
                   </span>
-                );
-              })()}
-              {/* Subtle beat pulse heartbeat dot */}
-              {isPlaying && (
-                <span
-                  className="hidden sm:inline-block w-1.5 h-1.5 rounded-full transition-transform duration-150"
-                  style={{
-                    backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 55%, 0.95)`,
-                    transform: `scale(${1 + beatDynamics.beatPulse * 0.6})`,
-                  }}
-                  title={`${beatDynamics.emotionTheme.auraLabel} • ${beatDynamics.bpm} BPM`}
-                />
-              )}
-            </div>
-          </div>
+                  {currentTrack.year && (
+                    <span className={`hidden md:inline-block text-[10px] font-mono opacity-60 ${theme.textSecondary}`}>
+                      ({currentTrack.year})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className={`text-[11px] sm:text-xs truncate font-medium ${theme.textSecondary}`}>
+                    {currentTrack.artist || 'Ating Universe'}
+                  </p>
+                  {/* World State & Genre Badge */}
+                  {(() => {
+                    const genreId = getTrackGenre(currentTrack);
+                    const def = GENRE_DEFINITIONS[genreId];
+                    return (
+                      <span
+                        className={`hidden lg:inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full border font-mono tracking-wide ${def.badgeStyle}`}
+                        title={`Atmospheric World: ${def.worldState} (${def.weatherType})`}
+                      >
+                        <span>{def.icon}</span>
+                        <span>{def.shortName}</span>
+                      </span>
+                    );
+                  })()}
+                  {/* Subtle beat pulse heartbeat dot */}
+                  {isPlaying && (
+                    <span
+                      className="hidden sm:inline-block w-1.5 h-1.5 rounded-full transition-transform duration-150"
+                      style={{
+                        backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 55%, 0.95)`,
+                        transform: `scale(${1 + beatDynamics.beatPulse * 0.6})`,
+                      }}
+                      title={`${beatDynamics.emotionTheme.auraLabel} • ${beatDynamics.bpm} BPM`}
+                    />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
           {/* Favorite button */}
           <button

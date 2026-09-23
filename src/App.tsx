@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { MusicProvider, useMusic } from './context/MusicContext';
 import { RoomBackground } from './environment/RoomBackground';
 import { YouTubePlayerHost } from './player/YouTubePlayerHost';
@@ -32,6 +33,7 @@ function MusicWorldContent() {
     allTracks,
     openRoulette,
     isPlaying,
+    turntableTransitioning,
     beatDynamics,
     theme,
     genreAtmosphere,
@@ -161,74 +163,97 @@ function MusicWorldContent() {
                   }}
                 />
 
-                <div className="min-w-0 flex-1 relative z-10">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[10px] font-mono tracking-widest uppercase text-amber-400 font-bold flex items-center gap-1.5">
-                      {isPlaying ? 'ACTIVE GROOVE' : 'CUED ON TURNTABLE'}
-                      {/* Organic 4-bar equalizer indicator that moves with the beat */}
-                      {isPlaying && (
-                        <span className="inline-flex items-end gap-0.5 h-3 ml-0.5">
-                          <span
-                            className="w-0.5 rounded-full transition-all duration-100"
-                            style={{
-                              height: `${20 + beatDynamics.beatPulse * 75}%`,
-                              backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 50%, 0.95)`,
-                            }}
-                          />
-                          <span
-                            className="w-0.5 rounded-full transition-all duration-100"
-                            style={{
-                              height: `${30 + beatDynamics.measurePulse * 65}%`,
-                              backgroundColor: `hsla(${beatDynamics.emotionTheme.secondaryHue}, 90%, 50%, 0.95)`,
-                            }}
-                          />
-                          <span
-                            className="w-0.5 rounded-full transition-all duration-100"
-                            style={{
-                              height: `${15 + beatDynamics.beatPulse * 85}%`,
-                              backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 50%, 0.95)`,
-                            }}
-                          />
-                          <span
-                            className="w-0.5 rounded-full transition-all duration-100"
-                            style={{
-                              height: `${25 + beatDynamics.measurePulse * 50}%`,
-                              backgroundColor: `hsla(${beatDynamics.emotionTheme.secondaryHue}, 90%, 50%, 0.95)`,
-                            }}
-                          />
-                        </span>
-                      )}
-                    </span>
+                {/* Cross-fade transition aura sweep */}
+                <AnimatePresence>
+                  {turntableTransitioning && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.35 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="absolute inset-0 pointer-events-none bg-gradient-to-r from-amber-400/20 via-white/10 to-transparent blur-md z-10"
+                    />
+                  )}
+                </AnimatePresence>
 
-                    {/* Dynamic Mood Badges */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {currentTrackMoods.map((mood) => (
-                        <span
-                          key={mood.id}
-                          className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shadow-sm ${mood.style}`}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                          {mood.label}
-                        </span>
-                      ))}
+                {/* Cross-fade track metadata & mood aura */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentTrack.id}
+                    initial={{ opacity: 0, y: 7, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -7, filter: 'blur(4px)' }}
+                    transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                    className="min-w-0 flex-1 relative z-10"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono tracking-widest uppercase text-amber-400 font-bold flex items-center gap-1.5">
+                        {isPlaying ? 'ACTIVE GROOVE' : 'CUED ON TURNTABLE'}
+                        {/* Organic 4-bar equalizer indicator that moves with the beat */}
+                        {isPlaying && (
+                          <span className="inline-flex items-end gap-0.5 h-3 ml-0.5">
+                            <span
+                              className="w-0.5 rounded-full transition-all duration-100"
+                              style={{
+                                height: `${20 + beatDynamics.beatPulse * 75}%`,
+                                backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 50%, 0.95)`,
+                              }}
+                            />
+                            <span
+                              className="w-0.5 rounded-full transition-all duration-100"
+                              style={{
+                                height: `${30 + beatDynamics.measurePulse * 65}%`,
+                                backgroundColor: `hsla(${beatDynamics.emotionTheme.secondaryHue}, 90%, 50%, 0.95)`,
+                              }}
+                            />
+                            <span
+                              className="w-0.5 rounded-full transition-all duration-100"
+                              style={{
+                                height: `${15 + beatDynamics.beatPulse * 85}%`,
+                                backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 50%, 0.95)`,
+                              }}
+                            />
+                            <span
+                              className="w-0.5 rounded-full transition-all duration-100"
+                              style={{
+                                height: `${25 + beatDynamics.measurePulse * 50}%`,
+                                backgroundColor: `hsla(${beatDynamics.emotionTheme.secondaryHue}, 90%, 50%, 0.95)`,
+                              }}
+                            />
+                          </span>
+                        )}
+                      </span>
+
+                      {/* Dynamic Mood Badges */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {currentTrackMoods.map((mood) => (
+                          <span
+                            key={mood.id}
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shadow-sm ${mood.style}`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                            {mood.label}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Active Emotion Aura Label */}
+                      <span
+                        className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full border font-medium ${theme.badgeStyle}`}
+                        title={beatDynamics.emotionTheme.description}
+                      >
+                        ✦ {beatDynamics.emotionTheme.auraLabel}
+                      </span>
                     </div>
 
-                    {/* Active Emotion Aura Label */}
-                    <span
-                      className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full border font-medium ${theme.badgeStyle}`}
-                      title={beatDynamics.emotionTheme.description}
-                    >
-                      ✦ {beatDynamics.emotionTheme.auraLabel}
-                    </span>
-                  </div>
-
-                  <p className={`text-sm sm:text-base font-bold truncate transition-colors ${theme.textPrimary}`}>
-                    {currentTrack.title}
-                  </p>
-                  <p className={`text-xs truncate font-medium transition-colors ${theme.textSecondary}`}>
-                    {currentTrack.artist} {currentTrack.year ? `(${currentTrack.year})` : ''}
-                  </p>
-                </div>
+                    <p className={`text-sm sm:text-base font-bold truncate transition-colors ${theme.textPrimary}`}>
+                      {currentTrack.title}
+                    </p>
+                    <p className={`text-xs truncate font-medium transition-colors ${theme.textSecondary}`}>
+                      {currentTrack.artist} {currentTrack.year ? `(${currentTrack.year})` : ''}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* Right controls: Theme Dynamics Mode & Universe Choice */}
                 <div className="shrink-0 flex items-center gap-2 self-start sm:self-center relative z-10">
@@ -277,9 +302,19 @@ function MusicWorldContent() {
                       Liner Notes
                     </span>
                   </div>
-                  {showLinerNotes && (
-                    <TrackCommentarySection track={currentTrack} variant="compact" />
-                  )}
+                  <AnimatePresence mode="wait">
+                    {showLinerNotes && (
+                      <motion.div
+                        key={currentTrack.id}
+                        initial={{ opacity: 0, y: 5, filter: 'blur(3px)' }}
+                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: -5, filter: 'blur(3px)' }}
+                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <TrackCommentarySection track={currentTrack} variant="compact" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
             </div>

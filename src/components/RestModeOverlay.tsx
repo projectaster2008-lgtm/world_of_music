@@ -30,14 +30,23 @@ export function RestModeOverlay() {
         <div className="flex flex-col items-center">
           <TurntableVisualizer size="standard" showControlsOverlay={false} />
 
-          <div className="mt-8 text-center max-w-md">
-            <h2 className="text-xl sm:text-2xl font-serif font-semibold text-stone-200 tracking-tight">
-              {currentTrack.title}
-            </h2>
-            <p className="text-xs sm:text-sm text-amber-300/80 font-sans mt-1">
-              {currentTrack.artist}
-            </p>
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTrack.id}
+              initial={{ opacity: 0, y: 6, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -6, filter: 'blur(4px)' }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 text-center max-w-md"
+            >
+              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-stone-200 tracking-tight">
+                {currentTrack.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-amber-300/80 font-sans mt-1">
+                {currentTrack.artist}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Bottom whisper instructions */}

@@ -145,82 +145,92 @@ export function FullPlayerModal() {
 
           {/* Track Meta Card */}
           <div className="w-full max-w-lg text-center px-4 relative z-10">
-            {/* Dynamic Emotion Aura & Tempo Header */}
-            <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-serif shadow-sm border"
-                style={{
-                  backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 60%, 15%, 0.7)`,
-                  borderColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 80%, 60%, 0.4)`,
-                  color: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 75%, 1)`,
-                }}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentTrack.id}
+                initial={{ opacity: 0, y: 8, filter: 'blur(5px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -8, filter: 'blur(5px)' }}
+                transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
               >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 60%, 1)`,
-                    transform: `scale(${isPlaying ? 1 + beatDynamics.beatPulse * 0.4 : 1})`,
-                  }}
+                {/* Dynamic Emotion Aura & Tempo Header */}
+                <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-serif shadow-sm border"
+                    style={{
+                      backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 60%, 15%, 0.7)`,
+                      borderColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 80%, 60%, 0.4)`,
+                      color: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 75%, 1)`,
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: `hsla(${beatDynamics.emotionTheme.primaryHue}, 90%, 60%, 1)`,
+                        transform: `scale(${isPlaying ? 1 + beatDynamics.beatPulse * 0.4 : 1})`,
+                      }}
+                    />
+                    ✦ {beatDynamics.emotionTheme.auraLabel}
+                  </span>
+
+                  <button
+                    onClick={beatDynamics.cycleDynamicsMode}
+                    title="Click to cycle Beat & Emotion theme dynamics (Vibrant / Subtle / Ambient)"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-stone-300 transition-colors"
+                  >
+                    <Activity className="w-3 h-3 text-amber-400" />
+                    <span className="capitalize">{beatDynamics.dynamicsMode}</span>
+                    <span className="text-stone-500">•</span>
+                    <span>{beatDynamics.bpm} BPM</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-3 mb-1">
+                  <h1 className="text-xl sm:text-3xl font-serif font-bold text-stone-100 tracking-tight leading-snug">
+                    {currentTrack.title}
+                  </h1>
+                  <button
+                    onClick={() => toggleFavorite(currentTrack.id)}
+                    className={`p-1.5 rounded-full transition-colors ${
+                      isFav
+                        ? 'text-rose-400 hover:text-rose-300'
+                        : 'text-stone-500 hover:text-stone-300'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${isFav ? 'fill-rose-400' : ''}`} />
+                  </button>
+                </div>
+
+                <p className="text-sm sm:text-base font-medium text-amber-300/90 mb-3">
+                  {currentTrack.artist || 'Ating Universe'}
+                </p>
+
+                {/* Clint & Maica's Reflections / Track Liner Notes */}
+                <TrackCommentarySection
+                  track={currentTrack}
+                  variant="full"
+                  className="my-5"
                 />
-                ✦ {beatDynamics.emotionTheme.auraLabel}
-              </span>
 
-              <button
-                onClick={beatDynamics.cycleDynamicsMode}
-                title="Click to cycle Beat & Emotion theme dynamics (Vibrant / Subtle / Ambient)"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-stone-300 transition-colors"
-              >
-                <Activity className="w-3 h-3 text-amber-400" />
-                <span className="capitalize">{beatDynamics.dynamicsMode}</span>
-                <span className="text-stone-500">•</span>
-                <span>{beatDynamics.bpm} BPM</span>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 mb-1">
-              <h1 className="text-xl sm:text-3xl font-serif font-bold text-stone-100 tracking-tight leading-snug">
-                {currentTrack.title}
-              </h1>
-              <button
-                onClick={() => toggleFavorite(currentTrack.id)}
-                className={`p-1.5 rounded-full transition-colors ${
-                  isFav
-                    ? 'text-rose-400 hover:text-rose-300'
-                    : 'text-stone-500 hover:text-stone-300'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isFav ? 'fill-rose-400' : ''}`} />
-              </button>
-            </div>
-
-            <p className="text-sm sm:text-base font-medium text-amber-300/90 mb-3">
-              {currentTrack.artist || 'Ating Universe'}
-            </p>
-
-            {/* Clint & Maica's Reflections / Track Liner Notes */}
-            <TrackCommentarySection
-              track={currentTrack}
-              variant="full"
-              className="my-5"
-            />
-
-            {/* Mood Badges & Tags */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 mb-6">
-              {moods.map((mood) => (
-                <span
-                  key={mood.id}
-                  className={`px-2.5 py-0.5 rounded-full border text-[11px] font-medium shadow-sm flex items-center gap-1 ${mood.style}`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                  {mood.label}
-                </span>
-              ))}
-              {currentTrack.year && (
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-mono">
-                  {currentTrack.year}
-                </span>
-              )}
-            </div>
+                {/* Mood Badges & Tags */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 mb-6">
+                  {moods.map((mood) => (
+                    <span
+                      key={mood.id}
+                      className={`px-2.5 py-0.5 rounded-full border text-[11px] font-medium shadow-sm flex items-center gap-1 ${mood.style}`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                      {mood.label}
+                    </span>
+                  ))}
+                  {currentTrack.year && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-mono">
+                      {currentTrack.year}
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Scrub Progress Bar */}
             <div className="w-full mb-2">

@@ -31,8 +31,14 @@ export function useYouTubePlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(initialVolume);
+  const volumeRef = useRef<number>(initialVolume);
+  volumeRef.current = volume;
   const [isMuted, setIsMutedState] = useState(initialMuted);
   const [lastError, setLastError] = useState<number | null>(null);
+
+  // Audio cross-fade ramping animation state
+  const fadeVolumeAnimRef = useRef<number | null>(null);
+  const shouldFadeInOnPlayRef = useRef<boolean>(false);
 
   // Tracks whether the user desires active playback (used for background & visibility recovery)
   const userWantsPlayingRef = useRef<boolean>(false);
@@ -156,6 +162,12 @@ export function useYouTubePlayer({
                       playerRef.current?.setPlaybackQuality?.('small');
                     } catch {
                       // ignore
+                    }
+
+                    // Smooth audio cross-fade swell-in when new track starts playing
+                    if (shouldFadeInOnPlayRef.current) {
+                      shouldFadeInOnPlayRef.current = false;
+                      fadeAudioTo(volumeRef.current, 500);
                     }
                     break;
                   case window.YT.PlayerState.PAUSED:
@@ -427,39 +439,53 @@ export function useYouTubePlayer({
     };
   }, []);
 
-  const loadTrack = useCallback((videoId: string, autoPlay: boolean = true, fallbacks: string[] = []) => {
-    setLastError(null);
-    isRetryingRef.current = false;
-    currentFallbackIndexRef.current = 0;
-    currentVideoIdRef.current = videoId;
-    networkRetryCountRef.current = 0;
-    stallCounterRef.current = 0;
-    lastProgressTimestampRef.current = Date.now();
-    lastReportedTimeRef.current = 0;
-    currentTimeRef.current = 0;
-    fallbacksRef.current = [videoId, ...fallbacks].filter((id, i, arr) => id && arr.indexOf(id) === i);
-    userWantsPlayingRef.current = Boolean(autoPlay);
-    if (autoPlay) {
-      isManualPauseRef.current = false;
-    }
-
-    if (!playerRef.current) return;
-    try {
+  const loadTrack = useCallback(
+    (videoId: string, autoPlay: boolean = true, fallbacks: string[] = [], crossFade: boolean = true) => {
+      setLastError(null);
+      isRetryingRef.current = false;
+      currentFallbackIndexRef.current = 0;
+      currentVideoIdRef.current = videoId;
+      networkRetryCountRef.current = 0;
+      stallCounterRef.current = 0;
+      lastProgressTimestampRef.current = Date.now();
+      lastReportedTimeRef.current = 0;
+      currentTimeRef.current = 0;
+      fallbacksRef.current = [videoId, ...fallbacks].filter((id, i, arr) => id && arr.indexOf(id) === i);
+      userWantsPlayingRef.current = Boolean(autoPlay);
       if (autoPlay) {
-        if (typeof playerRef.current.loadVideoById === 'function') {
-          playerRef.current.loadVideoById(videoId);
-          playerRef.current.setPlaybackQuality?.('small');
-        }
-      } else {
-        if (typeof playerRef.current.cueVideoById === 'function') {
-          playerRef.current.cueVideoById(videoId);
-          playerRef.current.setPlaybackQuality?.('small');
-        }
+        isManualPauseRef.current = false;
       }
-    } catch (e) {
-      console.warn('Could not load track:', e);
-    }
-  }, []);
+
+      if (!playerRef.current) return;
+      try {
+        if (crossFade && autoPlay) {
+          shouldFadeInOnPlayRef.current = true;
+          try {
+            playerRef.current.setVolume?.(0);
+          } catch {
+            // ignore
+          }
+        } else {
+          shouldFadeInOnPlayRef.current = false;
+        }
+
+        if (autoPlay) {
+          if (typeof playerRef.current.loadVideoById === 'function') {
+            playerRef.current.loadVideoById(videoId);
+            playerRef.current.setPlaybackQuality?.('small');
+          }
+        } else {
+          if (typeof playerRef.current.cueVideoById === 'function') {
+            playerRef.current.cueVideoById(videoId);
+            playerRef.current.setPlaybackQuality?.('small');
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load track:', e);
+      }
+    },
+    []
+  );
 
   const play = useCallback(() => {
     userWantsPlayingRef.current = true;
@@ -505,6 +531,55 @@ export function useYouTubePlayer({
     } catch (e) {
       console.warn('Seek failed:', e);
     }
+  }, []);
+
+  // Smooth cinematic audio cross-fade ramping without altering user base volume preference
+  const fadeAudioTo = useCallback((targetVol: number, durationMs: number = 320): Promise<void> => {
+    return new Promise((resolve) => {
+      if (fadeVolumeAnimRef.current) {
+        cancelAnimationFrame(fadeVolumeAnimRef.current);
+        fadeVolumeAnimRef.current = null;
+      }
+      if (!playerRef.current || typeof playerRef.current.setVolume !== 'function') {
+        resolve();
+        return;
+      }
+
+      let startVol = volumeRef.current;
+      try {
+        if (typeof playerRef.current.getVolume === 'function') {
+          startVol = playerRef.current.getVolume();
+        }
+      } catch {
+        startVol = volumeRef.current;
+      }
+
+      const clampedTarget = Math.max(0, Math.min(100, targetVol));
+      const startTime = performance.now();
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / Math.max(durationMs, 50));
+        // S-curve cosine easing for natural human ear perception
+        const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
+        const currentVol = Math.round(startVol + (clampedTarget - startVol) * eased);
+
+        try {
+          playerRef.current?.setVolume?.(currentVol);
+        } catch {
+          // ignore
+        }
+
+        if (progress < 1) {
+          fadeVolumeAnimRef.current = requestAnimationFrame(step);
+        } else {
+          fadeVolumeAnimRef.current = null;
+          resolve();
+        }
+      };
+
+      fadeVolumeAnimRef.current = requestAnimationFrame(step);
+    });
   }, []);
 
   const setVolume = useCallback((val: number) => {
@@ -554,6 +629,7 @@ export function useYouTubePlayer({
     pause,
     seekTo,
     setVolume,
+    fadeAudioTo,
     toggleMute,
   };
 }

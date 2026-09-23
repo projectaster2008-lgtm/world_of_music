@@ -197,6 +197,19 @@ export function TurntableVisualizer({
           }}
         />
 
+        {/* Soft cross-fade illumination veil during transition */}
+        <AnimatePresence>
+          {turntableTransitioning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.35 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 rounded-full pointer-events-none bg-gradient-to-tr from-amber-400/20 via-transparent to-rose-400/20 z-10"
+            />
+          )}
+        </AnimatePresence>
+
         {/* The Vinyl Disc itself */}
         <AnimatePresence mode="wait">
           <motion.div

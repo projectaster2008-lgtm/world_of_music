@@ -47,6 +47,7 @@ interface MusicContextType {
   isShuffle: boolean;
   repeatMode: 'off' | 'all' | 'one';
   turntableTransitioning: boolean;
+  isTrackCrossFading: boolean;
   hasEnteredSanctuary: boolean;
   lastError: number | null;
 
@@ -263,16 +264,25 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     activeRoomId
   );
 
-  // Smooth cinematic turntable needle lift & disc change
+  // Smooth cinematic turntable needle lift, disc change & audio cross-fade
   const performTrackTransition = useCallback(
-    (nextTrack: MusicTrack, autoPlay: boolean = true) => {
+    async (nextTrack: MusicTrack, autoPlay: boolean = true) => {
       setTurntableTransitioning(true);
 
-      // Step 1: pause current needle without triggering user manual pause state
+      // Step 1: Smoothly fade down audio volume for cross-fade if currently playing
+      if (yt.isPlaying) {
+        try {
+          await yt.fadeAudioTo(0, 320);
+        } catch {
+          // ignore
+        }
+      }
+
+      // Step 2: pause current needle without triggering user manual pause state
       yt.pause(false);
 
       setTimeout(() => {
-        // Step 2: switch track metadata and load video with fallbacks
+        // Step 3: switch track metadata and load video with cross-fade enabled
         setCurrentTrack(nextTrack);
         setHistory((prev) => [currentTrack, ...prev.slice(0, 19)]);
         try {
@@ -281,16 +291,16 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
           // ignore
         }
 
-        yt.loadTrack(nextTrack.youtubeId, autoPlay, nextTrack.fallbackYoutubeIds);
+        yt.loadTrack(nextTrack.youtubeId, autoPlay, nextTrack.fallbackYoutubeIds, true);
 
-        // Step 3: needle moves to groove & record spins up
+        // Step 4: needle moves to groove, record spins up, and audio volume swells smoothly
         setTimeout(() => {
           setTurntableTransitioning(false);
           if (autoPlay) {
             yt.play();
           }
-        }, 600);
-      }, 400);
+        }, 550);
+      }, 350);
     },
     [currentTrack, yt]
   );
@@ -551,6 +561,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     isShuffle,
     repeatMode,
     turntableTransitioning,
+    isTrackCrossFading: turntableTransitioning,
     hasEnteredSanctuary,
     lastError: yt.lastError,
 
