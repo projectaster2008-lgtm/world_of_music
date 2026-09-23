@@ -1,0 +1,6 @@
+{
+  "name": "Ating Universe — Music World",
+  "description": "A living personal music sanctuary and interactive listening environment within Ating Universe.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

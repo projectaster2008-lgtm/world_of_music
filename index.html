@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ating Universe — Music World</title>
+    <meta name="description" content="A living personal music sanctuary and interactive listening environment within Ating Universe." />
+    <meta property="og:title" content="Ating Universe — Music World" />
+    <meta property="og:description" content="A living personal music sanctuary and interactive listening environment within Ating Universe." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <!-- Background Audio & Tab-Exit Playback Persistence Interceptor -->
+    <script>
+      (function() {
+        try {
+          var realHiddenDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
+          var realVisDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState');
+          window.__realDocumentHidden = function() {
+            try {
+              return realHiddenDesc && realHiddenDesc.get ? realHiddenDesc.get.call(document) : false;
+            } catch(e) {
+              return false;
+            }
+          };
+
+          // Override Document visibility properties so third-party players (like YouTube)
+          // never detect tab exits, minimizing, or background switching.
+          Object.defineProperty(Document.prototype, 'hidden', {
+            get: function() { return false; },
+            configurable: true
+          });
+          Object.defineProperty(Document.prototype, 'visibilityState', {
+            get: function() { return 'visible'; },
+            configurable: true
+          });
+          Object.defineProperty(Document.prototype, 'webkitHidden', {
+            get: function() { return false; },
+            configurable: true
+          });
+          Object.defineProperty(Document.prototype, 'webkitVisibilityState', {
+            get: function() { return 'visible'; },
+            configurable: true
+          });
+          Document.prototype.hasFocus = function() { return true; };
+
+          // Intercept visibilitychange events at capture phase to prevent auto-pause scripts
+          var stopVisEvent = function(e) {
+            if (e && e.stopImmediatePropagation) {
+              e.stopImmediatePropagation();
+            }
+          };
+          window.addEventListener('visibilitychange', stopVisEvent, true);
+          document.addEventListener('visibilitychange', stopVisEvent, true);
+          window.addEventListener('webkitvisibilitychange', stopVisEvent, true);
+          document.addEventListener('webkitvisibilitychange', stopVisEvent, true);
+        } catch(err) {
+          // ignore
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#faf7f2] text-stone-850 antialiased selection:bg-amber-500/20 selection:text-amber-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
